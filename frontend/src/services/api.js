@@ -1,4 +1,4 @@
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Helper untuk fetch
 const fetchAPI = async (endpoint, options = {}) => {
@@ -10,11 +10,23 @@ const fetchAPI = async (endpoint, options = {}) => {
       },
       ...options
     });
-    
-    const data = await response.json();
+
+    const contentType = response.headers.get('content-type') || '';
+    const data = contentType.includes('application/json')
+      ? await response.json()
+      : await response.text();
+
     if (!response.ok) {
-      throw new Error(data.error || 'Terjadi kesalahan');
+      const message = typeof data === 'object'
+        ? data.error || data.message || 'Terjadi kesalahan'
+        : `API mengembalikan ${response.status} ${response.statusText}: ${data.slice(0, 120)}`;
+      throw new Error(message);
     }
+
+    if (!contentType.includes('application/json')) {
+      throw new Error(`API tidak mengembalikan JSON (${contentType || 'tanpa content-type'}): ${data.slice(0, 120)}`);
+    }
+
     return data;
   } catch (error) {
     console.error('API Error:', error);
