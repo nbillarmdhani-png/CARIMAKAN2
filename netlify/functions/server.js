@@ -384,4 +384,25 @@ app.get('/api/meals/:id', async (req, res) => {
   }
 });
 
-export const handler = serverless(app);
+const serverlessHandler = serverless(app);
+
+export const handler = async (event, context) => {
+  // When Netlify redirects /api/* → /.netlify/functions/server,
+  // event.path is reset to '/'. The original path is stored in
+  // the x-netlify-original-pathname header by Netlify.
+  const originalPath = 
+    event.headers?.['x-netlify-original-pathname'] ||
+    event.headers?.['x-original-pathname'];
+  
+  if (originalPath) {
+    event.path = originalPath;
+  }
+
+  // Also restore query string if present
+  const originalSearch = event.headers?.['x-netlify-original-search'];
+  if (originalSearch) {
+    event.queryStringParameters = Object.fromEntries(new URLSearchParams(originalSearch));
+  }
+
+  return serverlessHandler(event, context);
+};
