@@ -536,9 +536,7 @@ app.get('/api/meals/:id', async (req, res) => {
 // ============================================================
 // ===== EXPORT FOR NETLIFY FUNCTIONS =====
 // ============================================================
-export const handler = serverless(app, {
-  basePath: '/.netlify/functions/server'
-});
+export const handler = serverless(app);
 
 // Keep local dev server capability
 if (process.env.NODE_ENV !== 'production') {
