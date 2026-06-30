@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { chatAPI } from '../services/api';
+import { chatAPI, API_URL } from '../services/api';
 import { FaPaperPlane, FaRobot, FaTimes, FaTrash } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -19,7 +19,7 @@ const Chat = () => {
     const loadUsers = async () => {
       if (isAdmin) {
         try {
-          const response = await fetch('http://localhost:5000/api/users');
+          const response = await fetch(`${API_URL}/users`);
           const data = await response.json();
           const filteredUsers = data.filter(u => u.id !== user.id && u.role !== 'admin');
           setUsers(filteredUsers);

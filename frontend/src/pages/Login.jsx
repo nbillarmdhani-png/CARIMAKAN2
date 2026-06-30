@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash, FaUtensils } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { API_URL } from '../services/api';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -20,11 +21,11 @@ const Login = () => {
   useEffect(() => {
     const createDefaultUsers = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/users');
+        const response = await fetch(`${API_URL}/users`);
         if (response.ok) {
           const users = await response.json();
           if (users.length === 0) {
-            await fetch('http://localhost:5000/api/register', {
+            await fetch(`${API_URL}/register`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -35,7 +36,7 @@ const Login = () => {
                 role: 'admin'
               })
             });
-            await fetch('http://localhost:5000/api/register', {
+            await fetch(`${API_URL}/register`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
