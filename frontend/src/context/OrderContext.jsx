@@ -5,6 +5,73 @@ import toast from 'react-hot-toast';
 
 const OrderContext = createContext();
 
+const toNumber = (value, fallback = 0) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+};
+
+const getItems = (items) => {
+  if (Array.isArray(items)) return items;
+  if (typeof items === 'string') {
+    try {
+      const parsed = JSON.parse(items);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+const calculateItemsTotal = (items) => {
+  return getItems(items).reduce((sum, item) => {
+    return sum + toNumber(item.price) * toNumber(item.quantity, 1);
+  }, 0);
+};
+
+const normalizeOrder = (order, currentUser = null) => {
+  const items = getItems(order.items);
+  const totalPrice = toNumber(order.totalPrice ?? order.total_price, calculateItemsTotal(items));
+  const voucherDiscount = toNumber(order.voucherDiscount ?? order.voucher_discount, 0);
+  const createdAt = order.createdAt || order.created_at || new Date().toISOString();
+  const orderNumber = order.orderNumber || order.order_number || order.id || '';
+  const deliveryAddress = order.deliveryAddress || order.delivery_address || 'Tidak ada alamat';
+  const estimatedTime = toNumber(order.estimatedTime ?? order.estimated_time, 30);
+  const paymentMethod = order.paymentMethod || order.payment_method || '';
+  const paymentStatus = order.paymentStatus || order.payment_status || 'unpaid';
+  const voucherCode = order.voucherCode || order.voucher_code || null;
+  const userId = order.userId || order.user_id || currentUser?.id;
+  const userName = order.userName || order.user_name || currentUser?.name;
+  const userEmail = order.userEmail || order.user_email || currentUser?.email;
+
+  return {
+    ...order,
+    items,
+    totalPrice,
+    total_price: totalPrice,
+    voucherDiscount,
+    voucher_discount: voucherDiscount,
+    createdAt,
+    created_at: createdAt,
+    orderNumber,
+    order_number: orderNumber,
+    deliveryAddress,
+    delivery_address: deliveryAddress,
+    estimatedTime,
+    estimated_time: estimatedTime,
+    paymentMethod,
+    payment_method: paymentMethod || null,
+    paymentStatus,
+    payment_status: paymentStatus,
+    voucherCode,
+    voucher_code: voucherCode,
+    userId,
+    user_id: userId,
+    userName,
+    userEmail
+  };
+};
+
 export const useOrder = () => {
   const context = useContext(OrderContext);
   if (!context) {
@@ -35,14 +102,15 @@ export const OrderProvider = ({ children }) => {
       const role = user?.role || 'user';
       const userId = user?.id;
       const data = await orderAPI.getAll(userId, role);
-      setOrders(data);
+      const normalizedOrders = data.map(order => normalizeOrder(order, user));
+      setOrders(normalizedOrders);
       console.log('✅ Orders loaded from API:', data.length);
     } catch (error) {
       console.error('❌ Error loading orders:', error);
       // Fallback ke localStorage
       const saved = localStorage.getItem('orders');
       if (saved) {
-        const allOrders = JSON.parse(saved);
+        const allOrders = JSON.parse(saved).map(order => normalizeOrder(order, user));
         if (user?.role === 'admin') {
           setOrders(allOrders);
         } else {
@@ -91,20 +159,21 @@ export const OrderProvider = ({ children }) => {
         id: newOrder.id,
         createdAt: new Date().toISOString()
       };
+      const normalizedOrder = normalizeOrder(orderWithId, user);
       
-      setOrders(prev => [orderWithId, ...prev]);
-      setCurrentOrder(orderWithId);
+      setOrders(prev => [normalizedOrder, ...prev]);
+      setCurrentOrder(normalizedOrder);
       
       // Backup ke localStorage
       const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
       allOrders.push({
-        ...orderWithId,
+        ...normalizedOrder,
         userId: user.id,
         userName: user.name
       });
       localStorage.setItem('orders', JSON.stringify(allOrders));
       
-      return orderWithId;
+      return normalizedOrder;
     } catch (error) {
       console.error('❌ Error creating order:', error);
       
@@ -116,16 +185,17 @@ export const OrderProvider = ({ children }) => {
         userName: user.name,
         createdAt: new Date().toISOString()
       };
+      const normalizedOrder = normalizeOrder(orderWithId, user);
       
       const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-      allOrders.push(orderWithId);
+      allOrders.push(normalizedOrder);
       localStorage.setItem('orders', JSON.stringify(allOrders));
       
-      setOrders(prev => [orderWithId, ...prev]);
-      setCurrentOrder(orderWithId);
+      setOrders(prev => [normalizedOrder, ...prev]);
+      setCurrentOrder(normalizedOrder);
       
       toast.warning('⚠️ Pesanan disimpan di lokal (database error)');
-      return orderWithId;
+      return normalizedOrder;
     }
   };
 
@@ -139,7 +209,9 @@ export const OrderProvider = ({ children }) => {
           const updated = {
             ...order,
             paymentMethod: paymentMethod,
+            payment_method: paymentMethod,
             paymentStatus: 'paid',
+            payment_status: 'paid',
             status: 'cooking'
           };
           return updated;
@@ -151,13 +223,21 @@ export const OrderProvider = ({ children }) => {
         setCurrentOrder(prev => ({
           ...prev,
           paymentMethod: paymentMethod,
+          payment_method: paymentMethod,
           paymentStatus: 'paid',
+          payment_status: 'paid',
           status: 'cooking'
         }));
       }
       
       // Update localStorage
-      updateLocalStorage(orderId, { paymentMethod, paymentStatus: 'paid', status: 'cooking' });
+      updateLocalStorage(orderId, {
+        paymentMethod,
+        payment_method: paymentMethod,
+        paymentStatus: 'paid',
+        payment_status: 'paid',
+        status: 'cooking'
+      });
       
       toast.success('💳 Pembayaran berhasil! Pesanan sedang dimasak.');
       return true;

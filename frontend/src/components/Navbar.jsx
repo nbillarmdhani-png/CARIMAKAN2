@@ -78,7 +78,7 @@ const Navbar = () => {
   };
 
   // ===== CONFIRM CHECKOUT DENGAN VOUCHER =====
-  const confirmCheckout = () => {
+  const confirmCheckout = async () => {
     if (!deliveryAddress.trim()) {
       toast.error('⚠️ Silakan isi alamat pengiriman!');
       return;
@@ -102,7 +102,7 @@ const Navbar = () => {
       }
       
       // ===== KIRIM DATA VOUCHER KE ORDER =====
-      const newOrder = createOrder(cart, totalPrice, deliveryAddress, voucherCode, voucherDiscount);
+      const newOrder = await createOrder(cart, totalPrice, deliveryAddress, voucherCode, voucherDiscount);
       
       clearCart();
       setIsCheckoutModalOpen(false);
