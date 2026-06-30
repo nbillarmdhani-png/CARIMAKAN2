@@ -1,0 +1,14 @@
+[build]
+  command = "npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend"
+  publish = "frontend/dist"
+  functions = "backend"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/server/api/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
