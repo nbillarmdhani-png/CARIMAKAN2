@@ -384,4 +384,12 @@ app.get('/api/meals/:id', async (req, res) => {
   }
 });
 
-export const handler = serverless(app);
+const serverlessHandler = serverless(app);
+
+export const handler = async (event, context) => {
+  // Ensure the path is preserved correctly from the original request
+  if (event.path && !event.path.startsWith('/api')) {
+    event.path = '/' + event.path.replace(/^\/+/, '');
+  }
+  return serverlessHandler(event, context);
+};
