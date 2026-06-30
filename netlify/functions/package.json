@@ -1,0 +1,12 @@
+{
+  "name": "carimakan-functions",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "pg": "^8.22.0",
+    "serverless-http": "^4.0.0"
+  }
+}
